@@ -8,70 +8,118 @@ import atlantafx.base.theme.PrimerLight;
 import db.DatabaseConnection;
 import javafx.application.Application;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.geometry.Insets;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableView;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import operations.InsertOperation;
 import operations.SelectOperation;
+import operations.UpdateOperation;
+import operations.ViewManager;
 
 public class WorldDbApp extends Application {
 	private Connection con;
+	private TableView<ObservableList<String>> table = 
+			new TableView<>();
 	
-	private TableView<ObservableList<String>> table = new TableView<>();
-	
-	private ComboBox<String> tableSelector = new ComboBox<>();
+	private ComboBox<String> tableSelector 
+	= new ComboBox<>();
 	
 	private List<String> currentColumns = new ArrayList<>();
 	private List<String> databaseView = new ArrayList<>();
 	
-	private Button btnSelect = new Button("Atlasit (SELECT)");
+	private Button btnSelect = new Button("Atlasīt (SELECT)");
 	private Button btnInsert = new Button("Pievienot (INSERT)");
-	private Button btnUpdate = new Button("Atjauninat (UPDATE)");
-	private Button btnDelete = new Button("Izdzest (DELETE)");
+	private Button btnUpdate = new Button("Atjaunināt (UPDATE)");
+	private Button btnDelete = new Button("Dzēst (DELETE)");
+	
 	
 	@Override
 	public void start(Stage stage) {
-		Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
-		//PrimerDark(), NordDark()
+		Application.setUserAgentStylesheet(
+				new PrimerLight().getUserAgentStylesheet());
+		
+		/* PrimerDark(), NordDark()*/
 		try {
 			con = DatabaseConnection.getConnection();
-			//databaseView = ViewManager.getDatabaseViews(con);
+			databaseView = ViewManager.getDatabaseViews(con);
 			
-			
-		}catch (Exception e) {
-			showAlert("Savienojuma kluda:", e.getMessage());
+		} catch (Exception e) {
+			showAlert("Savienojuma kļūda: ", e.getMessage());
 			return;
 		}
-		tableSelector.getItems().add("---Tabulas---");
+		
+		tableSelector.getItems().add("--- Tabulas ---");
+		// Paši pieliksiet pārējās divas tabulas
 		tableSelector.getItems().addAll("city");
-		tableSelector.getItems().addAll("country");
-		tableSelector.getItems().addAll("countrylanguage");
 		
 		if(databaseView.isEmpty()) {
-			tableSelector.getItems().add("---NAV ATRASTS NEVIENS SKATS---");
-			showAlert("Informacija", "Datu baze pagaidam nav neviens skats");
+			tableSelector.getItems().add(
+					"--- NAV ATRASTS NEVIENS SKATS --");
+			showAlert("Informācija", 
+					"Datu bāzē pagaidām nav neviens skats");
 		} else {
-			tableSelector.getItems().add("---SKATI---");
+			tableSelector.getItems().add("--- SKATI ---");
 			tableSelector.getItems().addAll(databaseView);
 		}
 		
-		
 		btnSelect.setOnAction(e -> loadData());
+		btnInsert.setOnAction(e -> showInsertUpdateDialog(false));
+		btnUpdate.setOnAction(e -> showInsertUpdateDialog(true));
+		//btnDelete.setOnAction(e -> performDelete());
 		
+		tableSelector.getSelectionModel().selectedItemProperty()
+		.addListener((obs, oldVal, newVal) -> {
+			boolean isSeperator = 
+					(newVal == null || newVal.startsWith("---"));
+			btnSelect.setDisable(isSeperator);
+			btnInsert.setDisable(isSeperator);
+			btnUpdate.setDisable(isSeperator);
+			btnDelete.setDisable(isSeperator);
+		});
+		
+		tableSelector.getSelectionModel().select(1);
+		HBox topBox = new HBox(10, new Label("Tabula/Skats:"), 
+				tableSelector, btnSelect);
+		
+		topBox.setPadding(new Insets(10));
+		
+		HBox bottomBox = new HBox(10, btnInsert, btnUpdate, btnDelete);
+		
+		VBox root = new VBox(10, topBox, table, bottomBox);
+		stage.setScene(new Scene(root, 900, 600));
+		stage.setTitle("World DB APP");
+		stage.getIcons().add(
+		new Image(getClass().getResourceAsStream("/icon.png.png")));
+		stage.show();
+		loadData();
 	}
 	
 	private void loadData() {
 		String selectedTable = tableSelector.getValue();
-		if(selectedTable == null || selectedTable.startsWith("---"));
-		return;
+		if(selectedTable == null || 
+				selectedTable.startsWith("---"))
+			return;
 		
-		/*try {
-			currentColumns = SelectOperation.populateTable(con, selectedTable, table);
-		}catch(Exception e) {
-			showAlert("Kluda atlasot datus", e.getMessage());
+		try {
+			currentColumns = 
+			SelectOperation.populateTable(
+					con, selectedTable, table);
+		} catch(Exception e) {
+			showAlert("Kļūda atlasot datus", e.getMessage());
 		}
-	}*/
+	}
 	
 	private void showAlert(String title, String msg) {
 		Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -81,8 +129,90 @@ public class WorldDbApp extends Application {
 		alert.showAndWait();
 	}
 	
+	private void showInsertUpdateDialog(boolean isUpdate) {
+		String tableName = tableSelector.getValue();
+		if(tableName == null || tableName.startsWith("---"))
+			return;
+		
+		if(databaseView.contains(tableName)) {
+			showAlert("Uzmanibu!", "Izveletais objekts ir skats! Datus taja mainit un izveidot nevar!");
+			return;
+		}
+		loadData();
+		Alert dialog = new Alert(Alert.AlertType.INFORMATION);
+		dialog.setTitle(isUpdate ? "Update" + tableName : "INSERT" + tableName);
+		
+		dialog.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
+		if(isUpdate) {
+			dialog.setHeaderText("Aizpildi laukus, lai atjauninatu:");
+		}else {
+			dialog.setHeaderText("Aizpildi laukus, lai pievienotu:");
+		}
+		
+		GridPane grid = new GridPane();
+		grid.setHgap(10);
+		grid.setVgap(10);
+		grid.setPadding(new Insets(20));
+		
+		List<String> activeColumns = new ArrayList<>();
+		List<TextField> textFields = new ArrayList<>();
+		
+		int gridRow = 0;
+		for(int i = 0; i < currentColumns.size(); i++) {
+			String colName = currentColumns.get(i);
+			
+			if(!isUpdate && colName.equalsIgnoreCase("id")) {
+				continue;
+			}
+			
+			activeColumns.add(colName);
+			grid.add(new Label(colName + ":"), 0, gridRow);
+			TextField tf = new TextField();
+			if(isUpdate && i == 0) {
+				tf.setPromptText("Ievadi esosu ID / Valsts kodu");	
+			}
+			textFields.add(tf);
+			grid.add(tf, 1, gridRow);
+			gridRow++;
+		}
+		
+		dialog.getDialogPane().setContent(grid);
+		Button okButton = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
+		okButton.addEventFilter(ActionEvent.ACTION, event -> {
+			try {
+				List<String> values = new ArrayList<>();
+				
+				for(int i = 0; i < textFields.size(); i++) {
+					String colName = activeColumns.get(i);
+					String rawValue = textFields.get(i).getText();
+					values.add(rawValue);
+				}
+				if(isUpdate) {
+					int rowAffected = UpdateOperation.updateRecord(con, tableName, currentColumns, values);
+					
+					if(rowAffected > 0) {
+						showAlert("Veiksmigi", "Ieraksts tika atjauninats");
+						loadData();
+					}else {
+						String pkColumn = currentColumns.get(0);
+						String pkValue = values.get(0);
+						showAlert("Informacija", "Ieraksts ar " +pkColumn + " = " + pkValue + " netika atrasts!");
+						event.consume();
+					}
+				}else {
+					InsertOperation.insertRecord(con, tableName, activeColumns, values);
+					showAlert("Veiksmigi!", "Jauns ieraksts ievietots!");
+					loadData();
+				}
+			} catch(Exception e) {
+				showAlert("SQL kluda", e.getMessage());
+				event.consume();
+			}
+		});
+		dialog.showAndWait();
+	}
+	
 	public static void main(String[] args) {
 		launch(args);
 	}
-
 }
