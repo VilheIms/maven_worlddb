@@ -31,25 +31,25 @@ public class SelectOperation {
 			for (int i = 1; i <= colCount; i++) {
 				final int j = i - 1;
 				String colName = meta.getColumnName(i);
-				int colType = meta.getColumnType(i); // Iegūst SQL datu tipu
+				int colType = meta.getColumnType(i);
 				columnNames.add(colName);
 				
 				TableColumn<ObservableList<String>, String> col = new TableColumn<>(colName);
 				col.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().get(j)));
 				
-				// Pārbauda, vai kolonnā ir skaitliskas vērtības
+				
 				if (isNumericType(colType)) {
 					col.setComparator((String s1, String s2) -> {
 						if (s1 == null || s1.trim().isEmpty()) return (s2 == null || s2.trim().isEmpty()) ? 0 : -1;
 						if (s2 == null || s2.trim().isEmpty()) return 1;
 						
 						try {
-							// Izmanto Double, lai atbalstītu gan ID (veselus), gan iedzīvotāju skaitu vai reālos skaitļus
+							
 							double d1 = Double.parseDouble(s1.trim());
 							double d2 = Double.parseDouble(s2.trim());
 							return Double.compare(d1, d2);
 						} catch (NumberFormatException e) {
-							// Ja konvertēšana neizdodas, salīdzina kā tekstu
+							
 							return s1.compareTo(s2);
 						}
 					});
