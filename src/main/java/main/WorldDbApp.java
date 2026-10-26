@@ -84,7 +84,7 @@ public class WorldDbApp extends Application {
 
         stage.setScene(new Scene(root, 900, 600));
         stage.setTitle("World DB APP");
-        stage.getIcons().add(new Image(getClass().getResourceAsStream("/icon.png.png")));
+        stage.getIcons().add(new Image(getClass().getResourceAsStream("/resources/icon.png.png")));
         stage.show();
         loadData();
     }
