@@ -19,29 +19,32 @@ A small JavaFX desktop application for browsing and editing the MySQL **`world`*
 
 Fill in the fields to update a row in `country`. A confirmation dialog appears when the record has been updated.
 
-![Update country dialog](images/update-country.png)
+<img width="1366" height="768" alt="Screenshot (12)" src="https://github.com/user-attachments/assets/a3455a1a-ff8e-4834-a9e9-9e8c6b2842ec" />
 
 ### Insert a record
 
 Adding a new row to `city`. The `ID` column is auto-increment, so only `Name`, `CountryCode`, `District` and `Population` are required.
 
-![Insert city dialog](images/insert-city.png)
+<img width="1366" height="768" alt="Screenshot (15)" src="https://github.com/user-attachments/assets/c19350df-8917-4e18-be5b-252ad807e106" />
+
 
 ### Delete a record
 
 Enter the `CountryCode` of the rows to remove from `countrylanguage`.
 
-![Delete dialog](images/delete-countrylanguage-dialog.png)
+<img width="1366" height="768" alt="Screenshot (14)" src="https://github.com/user-attachments/assets/8cc7bad9-5348-4f06-9d13-e454d10f4cc9" />
+
 
 The app reports how many rows were deleted.
 
-![Delete result](images/delete-countrylanguage-result.png)
+<img width="1366" height="768" alt="Screenshot (13)" src="https://github.com/user-attachments/assets/a5af1065-a6c8-4209-be4d-6034b05dbf56" />
 
 ### Database views
 
 Views are listed in the same dropdown as tables. The `largest_districts` view shows the most populous districts per country.
 
-![largest_districts view](images/largest-districts-view.png)
+<img width="1366" height="768" alt="Screenshot (16)" src="https://github.com/user-attachments/assets/518528ae-5d7d-4b26-8ef9-60b9fb92e734" />
+
 
 ## Prerequisites
 
