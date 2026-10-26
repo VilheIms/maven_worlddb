@@ -206,8 +206,6 @@ public class WorldDbApp extends Application {
         Alert dialog = new Alert(Alert.AlertType.ERROR);
         dialog.setTitle("DELETE FROM " + tableName);
         dialog.getButtonTypes().setAll(ButtonType.OK, ButtonType.CANCEL);
-        String pkColumn = currentColumns.isEmpty() ? "ID" : currentColumns.get(0);
-        dialog.setHeaderText("Ievadi " + pkColumn.toLowerCase() + " lai dzestu:");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -216,7 +214,18 @@ public class WorldDbApp extends Application {
 
         List<String> pkColumns = new ArrayList<>();
         List<TextField> textFields = new ArrayList<>();
-        pkColumns.add(currentColumns.isEmpty() ? "ID" : currentColumns.get(0));
+
+        boolean isCountryLanguage = "countrylanguage".equalsIgnoreCase(tableName);
+
+        if (isCountryLanguage) {
+            pkColumns.add(currentColumns.isEmpty() ? "CountryCode" : currentColumns.get(0));
+            pkColumns.add("Language");
+            dialog.setHeaderText("Ievadi valsts kodu un valodu lai dzestu:");
+        } else {
+            String pkColumn = currentColumns.isEmpty() ? "ID" : currentColumns.get(0);
+            pkColumns.add(pkColumn);
+            dialog.setHeaderText("Ievadi " + pkColumn.toLowerCase() + " lai dzestu:");
+        }
 
         for (int i = 0; i < pkColumns.size(); i++) {
             String colName = pkColumns.get(i);
@@ -239,7 +248,9 @@ public class WorldDbApp extends Application {
                 try (java.sql.Statement stmt = con.createStatement()) {
                     stmt.execute("SET FOREIGN_KEY_CHECKS = 0;");
                 }
-                rowsAffected = DeleteOperation.deleteRecord(con, tableName, pkColumns.get(0), validPkValues.get(0));
+                
+                rowsAffected = DeleteOperation.deleteRecord(con, tableName, pkColumns, validPkValues);
+                
                 try (java.sql.Statement stmt = con.createStatement()) {
                     stmt.execute("SET FOREIGN_KEY_CHECKS = 1;");
                 }
@@ -248,24 +259,23 @@ public class WorldDbApp extends Application {
                     showAlert("Veiksmigi dzests!", "Dzesto ierakstu skaits: " + rowsAffected);
                     loadData();
                 } else {
-	                showAlert("Dzesana nenotika!", "Noraditais ieraksts netika atrasts!");
-	                event.consume();
-	            }
-	        } catch (IllegalArgumentException e) {
-	            showAlert("Ievades datu kluda!", e.getMessage());
-	            event.consume();
-	        } catch(Exception e) {
-
-	            try (java.sql.Statement stmt = con.createStatement()) {
-	                stmt.execute("SET FOREIGN_KEY_CHECKS = 1;");
-	            } catch (Exception ignored) {}
-	            
-	            showAlert("SQL kluda", e.getMessage());
-	            event.consume();
-	        }
-	    });
-	    dialog.showAndWait();
-	}
+                    showAlert("Dzesana nenotika!", "Noraditais ieraksts netika atrasts!");
+                    event.consume();
+                }
+            } catch (IllegalArgumentException e) {
+                showAlert("Ievades datu kluda!", e.getMessage());
+                event.consume();
+            } catch(Exception e) {
+                try (java.sql.Statement stmt = con.createStatement()) {
+                    stmt.execute("SET FOREIGN_KEY_CHECKS = 1;");
+                } catch (Exception ignored) {}
+                
+                showAlert("SQL kluda", e.getMessage());
+                event.consume();
+            }
+        });
+        dialog.showAndWait();
+    }
 
 	
 	public static void main(String[] args) {
